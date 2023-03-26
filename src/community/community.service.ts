@@ -109,9 +109,8 @@ export class CommunityService {
 
     async getChannels(
         communityId: string,
-        user: string
+        user: CommunityUser
     ): Promise<Channel[]> {
-        this.getCommunityUser(communityId, user)
 
         const community = await this.sharedService.db()
             .collection<Community>(Collection.COMMUNITY)
@@ -213,7 +212,7 @@ export class CommunityService {
         return communityUser.data[0].data
     }
 
-     getAuthToken(signature: string, walletAddress: string) {
+     getAuthToken(signature: string, walletAddress: string): string {
         // based on message signature we assign a token to the user
         const originalMessage  = `Login Spectrum3`;
 
@@ -229,15 +228,16 @@ export class CommunityService {
 
     }
 
-    validateToken (token: string) {
+    async validateToken (token: string): Promise<CommunityUser> {
         const payload = jwt.verify(token,  "test-token") as {id: string};
 
-        return payload['address'];
+        const user = await this.sharedService.db().collection<CommunityUser>(Collection.COMMUNITY_USER).where("address","==", payload["address"]).get()
+        return user.data[0].data
     }
 
 
-    validateAdmin(community: Community, user: string) {
-
+    async validateAdmin(communityId: string, user: string) {
+        let community = await this.getCommunity(communityId)
         return community.admin == user;
         // check if user is admin of community
     }
